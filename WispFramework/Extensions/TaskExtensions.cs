@@ -24,6 +24,21 @@ namespace WispFramework.Extensions
                     throw new TimeoutException("The operation has timed out.");
                 }
             }
-        } 
+        }
+        public static async Task TimeoutAfter(this Task task, TimeSpan timeout)
+        {
+            using (var timeoutCancellationTokenSource = new CancellationTokenSource())
+            {
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
+                if (completedTask == task)
+                {
+                    timeoutCancellationTokenSource.Cancel();
+                }
+                else
+                {
+                    throw new TimeoutException("The operation has timed out.");
+                }
+            }
+        }
     }
 }

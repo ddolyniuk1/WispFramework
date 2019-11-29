@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WispFramework.Extensions;
 using WispFramework.Patterns;
 using WispFramework.Patterns.Containers;
+using WispFramework.Patterns.Generators;
 using WispFramework.Utility;
 
 namespace WispFramework.UnitTests
@@ -20,6 +22,40 @@ namespace WispFramework.UnitTests
             Assert.IsTrue(cache.TryGetValue(k1, out _));
             cache.Remove(k1);
             Assert.IsFalse(cache.TryGetValue(k1, out _));
+        }
+
+        public async Task TestDynamic()
+        {
+            // initialize a dynamic that generates a random string when Value is requested
+            var dyn = new Dynamic<string>(() => RandomUtil.RandomString(1, 5));
+
+            // will print a random string every time
+            for (int i = 0; i < 10; i++)
+            { 
+                Console.WriteLine(dyn.Value);
+            }
+
+            // when throttled we use the cached data until expiry time
+            dyn = new Dynamic<string>(() => RandomUtil.RandomString(1, 5))
+                .Throttle(TimeSpan.FromSeconds(1));
+
+            // will print the same value unless 1 second has elapsed
+            for (int i = 0; i < 10; i++)
+            {
+                Console.WriteLine(dyn.Value);
+            } 
+        }
+
+        [TestMethod]
+        public async Task TestTimeout()
+        {
+            var time = DateTime.Now;
+            await Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                })
+                .TimeoutAfter(TimeSpan.FromSeconds(1));
+            Assert.IsTrue(DateTime.Now - time < TimeSpan.FromSeconds(2));
         }
 
         [TestMethod]
