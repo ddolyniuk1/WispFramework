@@ -11,7 +11,7 @@ extensions.
 ```csharp
 // a subject whose state can be observed and throws an event when changed
 Sub<bool> hasCoffee = new Sub<bool>(false); 
-// throws the ValueChanged event
+// triggers the ValueChanged event
 hasCoffee.Value = true; 
 ```
 
