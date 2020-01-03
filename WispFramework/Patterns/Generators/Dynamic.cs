@@ -57,18 +57,25 @@ namespace WispFramework.Patterns.Generators
             return this;
         }
 
+        private bool _isPoisoned;
+
+        public void Poison()
+        {
+            _isPoisoned = true;
+        }
+
         public T Value
         {
             get
             {
                 if (ExpiryTime.HasValue)
                 {
-                    if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime)
+                    if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
                     {
                         return _t;
                     }
                 }
-
+                 
                 var oldT = _t;
 
                 if (Evaluator == null)
@@ -79,6 +86,7 @@ namespace WispFramework.Patterns.Generators
 
                 _isSet = true;
                 _t = Evaluator.Invoke();
+                _isPoisoned = false;
 
                 LastUpdateTime = DateTime.Now;
                 ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldT, _t));
