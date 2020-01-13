@@ -84,17 +84,20 @@ namespace WispFramework.Patterns.Generators
                         "Evaluator is not set, please set the Evaluator property before requesting a Value.");
                 }
 
-                _isSet = true;
-                _t = Evaluator.Invoke();
-                _isPoisoned = false;
-
-                LastUpdateTime = DateTime.Now;
-                ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldT, _t));
-
+                Set(Evaluator.Invoke()); 
                 return _t;
             }
         }
 
+        public void Set(T value)
+        {
+            _isSet = true;
+            var oldT = _t;
+            _t = value;
+            _isPoisoned = false;
+            LastUpdateTime = DateTime.Now; 
+            ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldT, _t));
+        }
 
         public static implicit operator T(Dynamic<T> v)
         {

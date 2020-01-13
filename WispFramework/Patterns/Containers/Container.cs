@@ -73,9 +73,23 @@ namespace WispFramework.Patterns.Containers
             return default;
         }
 
-        public List<T> ResolveMany<T>()
+        public T ResolveByType<T>()
         {
-            return InternalContainer.Values.OfType<T>().ToList();
+            return InternalContainer.Values.OfType<T>().FirstOrDefault();
+        }
+
+        public IEnumerable<T> ResolveMany<T>()
+        {
+            return InternalContainer.Values.OfType<T>();
+        }
+
+        public void RemoveByType<T>()
+        {
+            var list = InternalContainer.Where(t => t.Value is T);
+            foreach (var item in list)
+            {
+                InternalContainer.TryRemove(item.Key, out _);
+            }
         }
 
         public bool TryRemove<T>(T obj)
