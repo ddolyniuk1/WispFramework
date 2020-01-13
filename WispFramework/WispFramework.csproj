@@ -14,8 +14,8 @@
     <Product>Wisp Framework</Product>
     <Copyright>2019</Copyright>
     <Version>1.1.2</Version>
-    <AssemblyVersion>1.1.1.0</AssemblyVersion>
-    <FileVersion>1.1.1.0</FileVersion>
+    <AssemblyVersion>1.1.2.0</AssemblyVersion>
+    <FileVersion>1.1.2.0</FileVersion>
     <PackageLicenseExpression></PackageLicenseExpression>
     <LangVersion>7.1</LangVersion>
     <PackageProjectUrl>https://github.com/ddolyniuk1/WispFramework</PackageProjectUrl>
