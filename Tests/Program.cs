@@ -1,5 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using WispFramework.Extensions;
 using WispFramework.Patterns;
 using WispFramework.Patterns.Generators;
 using WispFramework.Utility;
@@ -11,7 +17,7 @@ namespace Tests
         private static void Main(string[] args)
         {
             //EventAwaiterTests.Run(); 
-             
+  
             var lazyFactory = new LazyFactory<int, Dynamic<string>>()
                 .SetInitializer(i =>
                 {
@@ -37,7 +43,7 @@ namespace Tests
 
             Console.ReadLine();
         }
-
+         
         private static async void NewMethod(Dynamic<string> dyn)
         {
             while (true)
