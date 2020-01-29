@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,28 +19,40 @@ namespace Tests
         {
             //EventAwaiterTests.Run(); 
   
-            var lazyFactory = new LazyFactory<int, Dynamic<string>>()
+            var lazyFactory = new LazyFactory<int, Dynamic<Task<ConcurrentDictionary<(Guid? t, Guid? t2), int>>>>()
                 .SetInitializer(i =>
                 {
-                    return new Dynamic<string>()
-                        .SetEvaluator(() => $"Dyn {i}: " + " " +
-                                            RandomUtil.RandomString(RandomUtil.Range(1,
-                                                10)))
-                        .Throttle(TimeSpan.FromSeconds(5));
+                    return new Dynamic<Task<ConcurrentDictionary<(Guid? t, Guid? t2), int>>>()
+                        .SetEvaluator(async () => new ConcurrentDictionary<(Guid? t, Guid? t2), int>())
+                        .Throttle(TimeSpan.FromMinutes(20));
                 });
 
-            Task.Run(async () =>
+            for (var i = 0; i < 5000; i++)
             {
-                while (true)
-                {
-                    for (var i = 0; i < 3; i++)
-                    { 
-                        await Task.Delay(100);
-                        Console.WriteLine(lazyFactory[i].Value);
-                    }
-                }
-            });
+                var i1 = i;
+                _ = Task.Factory.StartNew(async () =>
+                  {
+                      for (var j = 0; j < 3; j++)
+                      {
+                          await Task.Delay(100);
+                          var value = await lazyFactory[j].Value;
+                          Console.WriteLine($"i {i1} j {j} " + value.GetType().Name);
 
+                          if (RandomUtil.Range(0, 100) == 99)
+                          {
+                              lazyFactory[j].Poison();
+                              Console.WriteLine("=======================            Poison " + j);
+                          }
+                      }
+
+                      if (RandomUtil.Range(0, 100) <= 3)
+                      {
+                          lazyFactory.Clear();
+                          Console.WriteLine("=======================            Clear ");
+                      }
+                  }, TaskCreationOptions.LongRunning);
+
+            } 
 
             Console.ReadLine();
         }
