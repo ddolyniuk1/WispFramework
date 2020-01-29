@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using WispFramework.EventArguments;
+using WispFramework.Interfaces;
 
 namespace WispFramework.Patterns.Generators
 {
@@ -9,14 +10,14 @@ namespace WispFramework.Patterns.Generators
     ///     When throttling, we evaluate only when the data is considered stale
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class Dynamic<T>
+    public class Dynamic<T> : IKeyValueObject
     {
         public EventHandler<ValueChangedEventArgs<T>> ValueUpdated;
         private readonly object _syncLock = new object();
 
         private bool _isPoisoned;
         private bool _isSet;
-        private T _t;
+        private T _t; 
 
         public Dynamic(Func<T> evaluator)
         {
@@ -128,5 +129,7 @@ namespace WispFramework.Patterns.Generators
             ExpiryTime = null;
             return this;
         }
+ 
+        public object Key { get; set; }
     }
 }

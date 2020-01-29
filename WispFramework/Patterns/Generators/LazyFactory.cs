@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Data;
+using WispFramework.Interfaces;
 
 namespace WispFramework.Patterns.Generators
 {
@@ -44,9 +45,13 @@ namespace WispFramework.Patterns.Generators
 
                 lock (_syncLock)
                 {
-                    var newThrottled = Initializer.Invoke(key);
-                    InternalCache[key] = newThrottled;
-                    return newThrottled;
+                    var item = Initializer.Invoke(key);
+                    if (item is IKeyValueObject keyValueObject)
+                    {
+                        keyValueObject.Key = key;
+                    }
+                    InternalCache[key] = item;
+                    return item;
                 }
             }
         }

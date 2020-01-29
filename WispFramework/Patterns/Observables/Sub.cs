@@ -1,10 +1,11 @@
 ﻿using System;
 using WispFramework.EventArguments;
+using WispFramework.Interfaces;
 
 namespace WispFramework.Patterns.Observables
 {
     [Serializable]
-    public class Sub<T>
+    public class Sub<T> : IKeyValueObject
     {
         private T _value;
 
@@ -77,5 +78,7 @@ namespace WispFramework.Patterns.Observables
         {
             return Value == null ? "null" : Value.ToString();
         }
+        
+        public object Key { get; set; }
     }
 }
