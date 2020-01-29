@@ -14,6 +14,7 @@ namespace WispFramework.Patterns.Generators
         public EventHandler<ValueChangedEventArgs<T>> ValueUpdated;
         private bool _isSet;
         private T _t;
+        private readonly object _syncLock = new object();
 
         public Dynamic(Func<T> evaluator)
         {
@@ -61,42 +62,60 @@ namespace WispFramework.Patterns.Generators
 
         public void Poison()
         {
-            _isPoisoned = true;
+            lock(_syncLock)
+            { 
+                _isPoisoned = true;
+            }
         }
 
         public T Value
         {
             get
             {
-                if (ExpiryTime.HasValue)
+                lock (_syncLock)
                 {
-                    if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
+                    if (ExpiryTime.HasValue)
                     {
-                        return _t;
+                        if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
+                        {
+                            return _t;
+                        }
                     }
-                }
-                 
-                var oldT = _t;
 
-                if (Evaluator == null)
-                {
-                    throw new EvaluateException(
-                        "Evaluator is not set, please set the Evaluator property before requesting a Value.");
-                }
+                    if (Evaluator == null)
+                    {
+                        throw new EvaluateException(
+                            "Evaluator is not set, please set the Evaluator property before requesting a Value.");
+                    }
 
-                Set(Evaluator.Invoke()); 
-                return _t;
+                    Set(Evaluator.Invoke());
+                    return _t;
+                }
             }
         }
 
         public void Set(T value)
         {
-            _isSet = true;
-            var oldT = _t;
-            _t = value;
-            _isPoisoned = false;
-            LastUpdateTime = DateTime.Now; 
-            ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldT, _t));
+            T oldValue = default;
+            lock (_syncLock)
+            {
+                oldValue = _t;
+                
+                _isSet = true;
+                _t = value;
+                _isPoisoned = false;
+
+                LastUpdateTime = DateTime.Now;
+            }
+            ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldValue, value));
+        }
+         
+        public T Get()
+        {
+            lock (_syncLock)
+            {
+                return _t;
+            }
         }
 
         public static implicit operator T(Dynamic<T> v)
