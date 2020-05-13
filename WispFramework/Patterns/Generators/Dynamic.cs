@@ -103,7 +103,7 @@ namespace WispFramework.Patterns.Generators
         /// Gets the cached value
         /// </summary>
         /// <returns></returns>
-        public T Get()
+        public T Peek()
         {
             lock (_syncLock)
             {

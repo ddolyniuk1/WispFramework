@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using WispFramework.Extensions;
+using WispFramework.Extensions.Tasks;
 using WispFramework.Patterns;
 using WispFramework.Patterns.Containers;
 using WispFramework.Patterns.Generators;
