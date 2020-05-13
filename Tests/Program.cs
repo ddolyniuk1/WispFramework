@@ -18,13 +18,41 @@ namespace Tests
         private static void Main(string[] args)
         {
             //EventAwaiterTests.Run(); 
-  
+
+            Task.Run(async () =>
+            {
+                var dyn = new Dynamic<string>().Throttled(TimeSpan.FromSeconds(0.1));
+                dyn.WithAsyncEvaluator(async () =>
+                {
+                    await Task.Delay(1000);
+                    var result = RandomUtil.RandomString(50); 
+                    return result;
+                });
+
+                for (var i = 0; i < 10; i++)
+                {
+                    Console.WriteLine(await dyn.GetValueAsync());
+                }
+
+                await Task.Delay(2000);
+
+                for (var i = 0; i < 10; i++)
+                {
+                    Console.WriteLine(await dyn.GetValueAsync());
+                }
+            });
+           
+
+            Console.ReadLine();
+
+            return;
+
             var lazyFactory = new LazyFactory<int, Dynamic<Task<ConcurrentDictionary<(Guid? t, Guid? t2), int>>>>()
                 .SetInitializer(i =>
                 {
                     return new Dynamic<Task<ConcurrentDictionary<(Guid? t, Guid? t2), int>>>()
-                        .SetEvaluator(async () => new ConcurrentDictionary<(Guid? t, Guid? t2), int>())
-                        .Throttle(TimeSpan.FromMinutes(20));
+                        .WithEvaluator(async () => new ConcurrentDictionary<(Guid? t, Guid? t2), int>())
+                        .Throttled(TimeSpan.FromMinutes(20));
                 });
 
             for (var i = 0; i < 5000; i++)

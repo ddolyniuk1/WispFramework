@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Threading.Tasks;
 using WispFramework.EventArguments;
 using WispFramework.Interfaces;
 
@@ -16,7 +17,7 @@ namespace WispFramework.Patterns.Generators
         private readonly object _syncLock = new object();
 
         private bool _isPoisoned;
-        private bool _isSet;
+        private bool _isSet; 
         private T _t; 
 
         public Dynamic(Func<T> evaluator)
@@ -24,38 +25,71 @@ namespace WispFramework.Patterns.Generators
             Evaluator = evaluator;
             LastUpdateTime = DateTime.Now;
         }
-
+         
         public Dynamic()
         {
         }
 
-        public T Value
+        public T Value => GetValue();
+
+        /// <summary>
+        /// Updates the value if the data has expired, and returns the current value
+        /// </summary>
+        /// <returns></returns>
+        public T GetValue()
         {
-            get
+            if (ExpiryTime.HasValue)
             {
-                lock (_syncLock)
+                if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
                 {
-                    if (ExpiryTime.HasValue)
-                    {
-                        if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
-                        {
-                            return _t;
-                        }
-                    }
-
-                    if (Evaluator == null)
-                    {
-                        throw new EvaluateException(
-                            "Evaluator is not set, please set the Evaluator property before requesting a Value.");
-                    }
-
-                    Set(Evaluator.Invoke());
                     return _t;
                 }
+            }
+
+            Evaluate().GetAwaiter().GetResult();
+            return _t;
+        }
+
+        /// <summary>
+        /// Updates the value if the data has expired, and returns the current value
+        /// </summary>
+        /// <returns></returns>
+        public async Task<T> GetValueAsync()
+        {
+            if (ExpiryTime.HasValue)
+            {
+                if (_isSet && DateTime.Now - LastUpdateTime <= ExpiryTime && !_isPoisoned)
+                {
+                    return _t;
+                }
+            }
+
+            await Evaluate();
+            return _t;
+        }
+
+        private async Task Evaluate()
+        {
+            if (Evaluator == null && AsyncEvaluator == null)
+            {
+                throw new EvaluateException(
+                    "Evaluator is not set, please set the Evaluator property before requesting a Value.");
+            }
+
+            if (Evaluator != null)
+            {
+                Set(Evaluator()); 
+            }
+            else if (AsyncEvaluator != null)
+            {
+                Set(await AsyncEvaluator());
             }
         }
 
         private Func<T> Evaluator { get; set; }
+
+        private Func<Task<T>> AsyncEvaluator { get; set; }
+
         private TimeSpan? ExpiryTime { get; set; }
 
         private DateTime LastUpdateTime { get; set; }
@@ -65,6 +99,10 @@ namespace WispFramework.Patterns.Generators
             return v.Value;
         }
 
+        /// <summary>
+        /// Gets the cached value
+        /// </summary>
+        /// <returns></returns>
         public T Get()
         {
             lock (_syncLock)
@@ -83,6 +121,7 @@ namespace WispFramework.Patterns.Generators
 
         public void Set(T value)
         {
+             
             T oldValue = default;
             lock (_syncLock)
             {
@@ -98,9 +137,15 @@ namespace WispFramework.Patterns.Generators
             ValueUpdated?.Invoke(this, new ValueChangedEventArgs<T>(oldValue, value));
         }
 
-        public Dynamic<T> SetEvaluator(Func<T> evaluator)
+        public Dynamic<T> WithEvaluator(Func<T> evaluator)
         {
             Evaluator = evaluator;
+            return this;
+        }
+
+        public Dynamic<T> WithAsyncEvaluator(Func<Task<T>> evaluator)
+        {
+            AsyncEvaluator = evaluator;
             return this;
         }
 
@@ -110,7 +155,7 @@ namespace WispFramework.Patterns.Generators
         ///     which is on or after LastUpdateTime + ExpiryTime
         /// </summary>
         /// <param name="expiryTime"></param>
-        public Dynamic<T> Throttle(TimeSpan expiryTime)
+        public Dynamic<T> Throttled(TimeSpan expiryTime)
         {
             ExpiryTime = expiryTime;
             return this;
@@ -124,7 +169,7 @@ namespace WispFramework.Patterns.Generators
         /// <summary>
         ///     Allows evaluation to occur on every request
         /// </summary>
-        public Dynamic<T> UnThrottle()
+        public Dynamic<T> UnThrottled()
         {
             ExpiryTime = null;
             return this;

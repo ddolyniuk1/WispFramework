@@ -20,7 +20,7 @@ namespace WispFramework.Patterns.Containers
             LifeSpan = itemLifespan.Value;
 
             Snapshot = new Dynamic<IEnumerable<KeyValuePair<TKeyType, TValueType>>>(GetSnapshot)
-                .Throttle(TimeSpan.FromSeconds(0.2f));
+                .Throttled(TimeSpan.FromSeconds(0.2f));
         }
 
         public ConcurrentDictionary<TKeyType, Expirable<TValueType>> InternalDictionary { get; } =
@@ -58,7 +58,7 @@ namespace WispFramework.Patterns.Containers
 
         public ExpirableCache<TKeyType, TValueType> WithSnapshotRefreshInterval(TimeSpan newRefreshTimespan)
         {
-            Snapshot.Throttle(newRefreshTimespan);
+            Snapshot.Throttled(newRefreshTimespan);
             return this;
         }
 

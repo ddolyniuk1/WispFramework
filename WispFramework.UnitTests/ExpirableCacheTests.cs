@@ -37,7 +37,7 @@ namespace WispFramework.UnitTests
 
             // when throttled we use the cached data until expiry time
             dyn = new Dynamic<string>(() => RandomUtil.RandomString(1, 5))
-                .Throttle(TimeSpan.FromSeconds(1));
+                .Throttled(TimeSpan.FromSeconds(1));
 
             // will print the same value unless 1 second has elapsed
             for (int i = 0; i < 10; i++)
