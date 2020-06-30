@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using WispFramework.Utility;
 
 namespace WispFramework.Extensions.Linq
 {
@@ -18,48 +19,51 @@ namespace WispFramework.Extensions.Linq
                 .GroupBy(x => x.Index / chunkSize)
                 .Select(x => x.Select(v => v.Value).ToList())
                 .ToList();
+        } 
+
+        public static string ToCsv<T>(this IEnumerable<T> list)
+        {
+            return list.Stringify().Join(", ");
         }
 
-        public static async Task<IEnumerable<TResult>> ParallelSelectMany<TSource, TResult>(this IEnumerable<TSource> source, int chunkSize, Func<TSource, TResult> selector, CancellationToken cancellationToken, Action<int> inTaskOperation = null)
+        public static string Join<T>(this IEnumerable<T> list, string separator, Func<T, string> toStringExpression)
         {
-            var chunks = source.ChunkBy(chunkSize).ToArray();
-            var tasks = new Task<IEnumerable<TResult>>[chunks.Length];
-              
-            for (var index = 0; index < chunks.Count(); index++)
-            {
-                var item = chunks[index];
-                var index1 = index;
-                tasks[index] = Task.Factory.StartNew(list =>
-                {
-                    inTaskOperation?.Invoke(index1);
-                    var li = (IEnumerable<TSource>) list;
-                    return li.Select(selector); 
-                }, item, cancellationToken); 
-            }
-
-            var results = await Task.WhenAll(tasks);
-
-            return results.SelectMany(t => t); 
+            return list.Stringify(toStringExpression).Join(separator);
         }
 
-        public static async Task<IEnumerable<TSource>> ParallelWhere<TSource>(this IEnumerable<TSource> source, int chunkSize, Func<TSource, bool> predicate, CancellationToken cancellationToken)
+        public static IEnumerable<string> Stringify<T>(this IEnumerable<T> list)
         {
-            var chunks = source.ChunkBy(chunkSize).ToArray();
-            var tasks = new Task<IEnumerable<TSource>>[chunks.Length];
-              
-            for (var index = 0; index < chunks.Count(); index++)
-            {
-                var item = chunks[index]; 
-                tasks[index] = Task.Factory.StartNew(list =>
-                { 
-                    var li = (IEnumerable<TSource>) list;
-                    return li.Where(predicate); 
-                }, item, cancellationToken); 
-            }
+            return list.Select(t => t.ToString());
+        }
 
-            var results = await Task.WhenAll(tasks);
+        public static IEnumerable<string> Stringify<T>(this IEnumerable<T> list, Func<T, string> toStringExpression)
+        {
+            return list.Select(toStringExpression);
+        }
 
-            return results.SelectMany(t => t); 
+        public static string Join(this IEnumerable<string> list, string separator)
+        {
+            return string.Join(separator, list);
+        }
+
+        public static T RandomItem<T>(this IEnumerable<T> list)
+        {
+            var enumerable = list as T[] ?? list.ToArray();
+            return !enumerable.Any() ? default : enumerable.ElementAtOrDefault(RandomUtil.Range(0, enumerable.Count()));
+        } 
+
+        /// <summary>
+        /// Shuffle the IEnumerable
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> list)
+        {
+            var enumerable = list as T[] ?? list.ToArray();
+            var shuffledList =
+                enumerable.Select(x => new {Number = RandomUtil.Range(0, enumerable.Count()), Item = x}).OrderBy(x => x.Number).Select(x => x.Item); 
+            return shuffledList.ToList();
         }
     }
 }
